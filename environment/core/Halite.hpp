@@ -81,11 +81,11 @@ private:
                                                                       //and is guaranteed to have an outer size of map_height and an inner size of map_width
 
     std::vector<bool> processNextFrame(std::vector<bool> alive);
-    void output(std::string filename);
+    void output(std::string filename, unsigned int seed, const std::vector<PlayerStatistics>& player_statistics, bool concise);
 public:
     Halite(unsigned short width_, unsigned short height_, unsigned int seed_, unsigned short n_players_for_map_creation, Networking networking_, bool shouldIgnoreTimeout);
 
-  GameStatistics runGame(std::vector<std::string> * names_, unsigned int seed, unsigned int id, bool enabledReplay, std::string replayDirectory);
+    GameStatistics runGame(std::vector<std::string> * names_, unsigned int seed, bool append_seed, bool concise, bool enabledReplay, std::string replayDirectory, const std::string& outputFilename);
     std::string getName(unsigned char playerTag);
 
     ~Halite();

@@ -245,7 +245,7 @@ Halite::Halite(unsigned short width_, unsigned short height_, unsigned int seed_
     timeout_tags = std::set<unsigned short>();
 }
 
-void Halite::output(std::string filename) {
+void Halite::output(std::string filename, unsigned int seed, const std::vector<PlayerStatistics>& player_statistics, bool concise) {
     std::ofstream gameFile;
     gameFile.open(filename, std::ios_base::binary);
     if(!gameFile.is_open()) throw std::runtime_error("Could not open file for replay");
@@ -263,6 +263,19 @@ void Halite::output(std::string filename) {
 
     //Encode player names.
     j["player_names"] = nlohmann::json(player_names);
+
+    //Encode random seed
+    j["seed"] = nlohmann::json(seed);
+
+    //Encode the game result.
+    std::vector<int> ranks;
+    for (auto& s: player_statistics)
+        ranks.push_back(s.rank);
+    j["player_ranks"] = nlohmann::json(ranks);
+
+    //Optionally suppress heavy output
+    if (!concise)
+    {
 
     //Encode the production map.
     std::vector< std::vector<int> > productions(game_map.map_height, std::vector<int>(game_map.map_width));
@@ -300,13 +313,15 @@ void Halite::output(std::string filename) {
     j["frames"] = nlohmann::json(frames);
     j["moves"] = nlohmann::json(moves);
 
+    }
+
     gameFile << j;
 
     gameFile.flush();
     gameFile.close();
 }
 
-GameStatistics Halite::runGame(std::vector<std::string> * names_, unsigned int seed, unsigned int id, bool enabledReplay, std::string replayDirectory) {
+GameStatistics Halite::runGame(std::vector<std::string> * names_, unsigned int seed, bool append_seed, bool concise, bool enabledReplay, std::string replayDirectory, const std::string& outputFilename) {
     //For rankings
     std::vector<bool> result(number_of_players, true);
     std::vector<unsigned char> rankings;
@@ -384,15 +399,16 @@ GameStatistics Halite::runGame(std::vector<std::string> * names_, unsigned int s
     }
     stats.timeout_tags = timeout_tags;
     stats.timeout_log_filenames = std::vector<std::string>(timeout_tags.size());
+
     //Output gamefile. First try the replays folder; if that fails, just use the straight filename.
     if (enabledReplay) {
-      stats.output_filename = replayDirectory + "Replays/" + std::to_string(id) + '-' + std::to_string(seed) + ".hlt";
+      stats.output_filename = replayDirectory + "Replays/" + outputFilename + (append_seed ? ('-' + std::to_string(seed)) : "") + ".hlt";
       try {
-	output(stats.output_filename);
+	output(stats.output_filename, seed, stats.player_statistics, concise);
       }
       catch(std::runtime_error & e) {
-	stats.output_filename = replayDirectory + std::to_string(id) + '-' + std::to_string(seed) + ".hlt";
-	output(stats.output_filename);
+        stats.output_filename = replayDirectory + outputFilename + (append_seed ? ('-' + std::to_string(seed)) : "") + ".hlt";
+	output(stats.output_filename, seed, stats.player_statistics, concise);
       }
       if(!quiet_output) std::cout << "Map seed was " << seed << std::endl << "Opening a file at " << stats.output_filename << std::endl;
       else std::cout << stats.output_filename << ' ' << seed << std::endl;
@@ -400,7 +416,7 @@ GameStatistics Halite::runGame(std::vector<std::string> * names_, unsigned int s
     //Output logs for players that timed out or errored.
     int timeoutIndex = 0;
     for(auto a = timeout_tags.begin(); a != timeout_tags.end(); a++) {
-        stats.timeout_log_filenames[timeoutIndex] = std::to_string(*a) + '-' + std::to_string(id) + ".log";
+        stats.timeout_log_filenames[timeoutIndex] = std::to_string(*a) + '-' + outputFilename + ".log";
         std::ofstream file(stats.timeout_log_filenames[timeoutIndex], std::ios_base::binary);
         file << networking.player_logs[*a - 1];
         file.flush();

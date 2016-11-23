@@ -39,6 +39,7 @@ int main(int argc, char ** argv) {
 
     //Switch Args.
     TCLAP::SwitchArg quietSwitch("q", "quiet", "Runs game in quiet mode, producing machine-parsable output.", cmd, false);
+    TCLAP::SwitchArg conciseSwitch("c", "concise", "Runs game in concise mode, producing minimal JSON output.", cmd, false);
     TCLAP::SwitchArg overrideSwitch("o", "override", "Overrides player-sent names using cmd args [SERVER ONLY].", cmd, false);
     TCLAP::SwitchArg timeoutSwitch("t", "timeout", "Causes game environment to ignore timeouts (give all bots infinite time).", cmd, false);
     TCLAP::SwitchArg noReplaySwitch("r", "noreplay", "Turns off the replay generation.", cmd, false);
@@ -48,11 +49,16 @@ int main(int argc, char ** argv) {
     TCLAP::ValueArg< std::pair<signed int, signed int> > dimensionArgs("d", "dimensions", "The dimensions of the map.", false, { 0, 0 }, "a string containing two space-seprated positive integers", cmd);
     TCLAP::ValueArg<unsigned int> seedArg("s", "seed", "The seed for the map generator.", false, 0, "positive integer", cmd);
     TCLAP::ValueArg<std::string> replayDirectoryArg("i", "replaydirectory", "The path to directory for replay output.", false, ".", "path to directory", cmd);
+    TCLAP::ValueArg<std::string> outputArg("u", "output", "The output filename (without extension).", false, "", "string", cmd);
 
     //Remaining Args, be they start commands and/or override names. Description only includes start commands since it will only be seen on local testing.
     TCLAP::UnlabeledMultiArg<std::string> otherArgs("NonspecifiedArgs", "Start commands for bots.", false, "Array of strings", cmd);
 
     cmd.parse(argc, argv);
+
+    std::string outputFilename = outputArg.getValue();
+    if (outputFilename.empty())
+        outputFilename = std::to_string(id);
 
     unsigned short mapWidth = dimensionArgs.getValue().first;
     unsigned short mapHeight = dimensionArgs.getValue().second;
@@ -64,6 +70,7 @@ int main(int argc, char ** argv) {
     unsigned short n_players_for_map_creation = nPlayersArg.getValue();
 
     quiet_output = quietSwitch.getValue();
+    bool concise = conciseSwitch.getValue();
     bool override_names = overrideSwitch.getValue();
     bool ignore_timeout = timeoutSwitch.getValue();
 
@@ -138,13 +145,14 @@ int main(int argc, char ** argv) {
     //Create game. Null parameters will be ignored.
     my_game = new Halite(mapWidth, mapHeight, seed, n_players_for_map_creation, networking, ignore_timeout);
 
-    std::string outputFilename = replayDirectoryArg.getValue();
+    std::string replayDirectory = replayDirectoryArg.getValue();
 #ifdef _WIN32
-    if(outputFilename.back() != '\\') outputFilename.push_back('\\');
+    if(replayDirectory.back() != '\\') replayDirectory.push_back('\\');
 #else
-    if(outputFilename.back() != '/') outputFilename.push_back('/');
+    if(replayDirectory.back() != '/') replayDirectory.push_back('/');
 #endif
-    GameStatistics stats = my_game->runGame(names, seed, id, !noReplaySwitch.getValue(), outputFilename);
+    GameStatistics stats = my_game->runGame(names, seed, outputArg.getValue().empty(), concise, !noReplaySwitch.getValue(), replayDirectory, outputFilename);
+
     if(names != NULL) delete names;
 
     std::string victoryOut;
