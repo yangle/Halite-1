@@ -408,6 +408,7 @@ workingPath/
 *.gch
 *.exe
 environment/halite
+environment/nacl
 worker/halite
 git_pull.php
 
