@@ -474,7 +474,7 @@ function showGame(game, $container, maxWidth, maxHeight, showmovement, isminimal
                     var x = (Math.floor(mousepos.x / rw) - xOffset) % game.width, y = (Math.floor(mousepos.y / rh) - yOffset) % game.height;
                     if(x < 0) x += game.width;
                     if(y < 0) y += game.height;
-                    infoText.text += ' | Loc: ' + x.toString() + ',' + y.toString();
+                    infoText.text += ' | Loc: ' + y.toString() + ',' + x.toString();
                 }
             }
             else { //Mouse is clicked and over renderer.
