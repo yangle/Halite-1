@@ -40,6 +40,7 @@ int main(int argc, char ** argv) {
     //Switch Args.
     TCLAP::SwitchArg quietSwitch("q", "quiet", "Runs game in quiet mode, producing machine-parsable output.", cmd, false);
     TCLAP::SwitchArg conciseSwitch("c", "concise", "Runs game in concise mode, producing minimal JSON output.", cmd, false);
+    TCLAP::SwitchArg progressionSwitch("p", "progression", "Add progression statistics to JSON output.", cmd, false);
     TCLAP::SwitchArg overrideSwitch("o", "override", "Overrides player-sent names using cmd args [SERVER ONLY].", cmd, false);
     TCLAP::SwitchArg timeoutSwitch("t", "timeout", "Causes game environment to ignore timeouts (give all bots infinite time).", cmd, false);
     TCLAP::SwitchArg noReplaySwitch("r", "noreplay", "Turns off the replay generation.", cmd, false);
@@ -71,6 +72,7 @@ int main(int argc, char ** argv) {
 
     quiet_output = quietSwitch.getValue();
     bool concise = conciseSwitch.getValue();
+    bool progression = progressionSwitch.getValue();
     bool override_names = overrideSwitch.getValue();
     bool ignore_timeout = timeoutSwitch.getValue();
 
@@ -151,7 +153,7 @@ int main(int argc, char ** argv) {
 #else
     if(replayDirectory.back() != '/') replayDirectory.push_back('/');
 #endif
-    GameStatistics stats = my_game->runGame(names, seed, outputArg.getValue().empty(), concise, !noReplaySwitch.getValue(), replayDirectory, outputFilename);
+    GameStatistics stats = my_game->runGame(names, seed, outputArg.getValue().empty(), concise, progression, !noReplaySwitch.getValue(), replayDirectory, outputFilename);
 
     if(names != NULL) delete names;
 
